@@ -28,6 +28,12 @@ if os.path.exists("config.json"):
 #______________GUI_LAYOUT________________________
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+        """        Set up the user interface for the main window.
+
+        Args:
+            MainWindow (QMainWindow): The main window object.
+        """
+
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
         MainWindow.setStyleSheet("")
@@ -108,6 +114,15 @@ class Ui_MainWindow(object):
         qtc.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
+        """        Retranslate the user interface elements.
+
+        This function is responsible for retranslating the user interface elements to the specified language.
+
+        Args:
+            self: The object instance.
+            MainWindow: The main window of the application.
+        """
+
         _translate = qtc.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Invoice Analyzer Alpha"))
         self.label.setText(_translate("MainWindow", "Invoice Analyzer Alpha"))
@@ -124,6 +139,15 @@ class Ui_MainWindow(object):
 #___________________GUI_BACKEND__________________________________
 class Ui(qtw.QMainWindow,Ui_MainWindow):
     def __init__(self):
+        """        Initialize the Ui class.
+
+        It initializes the Ui class and sets up the user interface. It also checks for the existence of the 'config.json' file
+        in the current working directory and disables the 'select_file_btn' if the file is missing.
+
+        Args:
+            self: Instance of the Ui class.
+        """
+
         super(Ui, self).__init__()
         # uic.loadUi('gui_layout.ui', self)
         self.setupUi(self)
@@ -140,6 +164,12 @@ class Ui(qtw.QMainWindow,Ui_MainWindow):
         self.show()
     
     def run_process(self):
+        """        Open a file dialog to select a PDF file and start a worker thread to process the selected file.
+
+        Opens a file dialog to allow the user to select a PDF file. If a file is selected, it normalizes the file path,
+        updates the UI elements, and starts a worker thread to process the selected file.
+        """
+
         file_dialog = qtw.QFileDialog(self)
         file_dialog.setFileMode(qtw.QFileDialog.AnyFile)
         file_dialog.setNameFilter("PDF files (*.pdf)")
@@ -178,12 +208,34 @@ class Ui(qtw.QMainWindow,Ui_MainWindow):
             
 
     def update_progress_bar_func(self, value):
+        """        Update the value of a progress bar.
+
+        This function updates the value of a progress bar with the given value.
+
+        Args:
+            self: The instance of the class.
+            value (int): The new value for the progress bar.
+        """
+
         self.progress_bar.setValue(value)
     
     def append_logs_data_func(self,text):
+        """        Append text to the logs data.
+
+        This function appends the input text to the logs data list.
+
+        Args:
+            text (str): The text to be appended to the logs data.
+        """
+
         self.logs.append(text)
 
     def enable_widgets(self):
+        """        Enable the select file button.
+
+        This method enables the select file button to allow user interaction.
+        """
+
         self.select_file_btn.setEnabled(True)   
 
 #________________________________________________________________
@@ -194,11 +246,23 @@ class WorkerThread(qtc.QObject):
     logs_data = qtc.pyqtSignal(str)
     update_progress_bar = qtc.pyqtSignal(int)
     def __init__(self,pdf_file_path):
+        """        Initialize WorkerThread with the provided PDF file path.
+
+        Args:
+            pdf_file_path (str): The path to the PDF file.
+        """
+
         super(WorkerThread, self).__init__()
         self.pdf_file_path = pdf_file_path
         self.progress_bar_value = 0
         self.progress_step = 0
     def run(self):
+        """        Process the selected file, split the PDF, analyze and rename invoices, and output the results to a CSV file.
+
+        Args:
+            self (object): The instance of the class.
+        """
+
         # Process the selected file
         output_folder = os.path.splitext(self.pdf_file_path)[0]
         # output_folder = os.path.dirname(self.pdf_file_path)
@@ -220,6 +284,21 @@ class WorkerThread(qtc.QObject):
         self.work_finished.emit()
     
     def analyze_and_rename_invoice(self,file_path):
+        """        Analyze the invoice document and rename it based on extracted fields.
+
+        This function takes the file path of an invoice document, analyzes the document using Azure Form Recognizer,
+        extracts relevant data, and renames the file based on the extracted fields.
+
+        Args:
+            file_path (str): The file path of the invoice document.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing the extracted invoice data.
+
+        Raises:
+            FileNotFoundError: If the input file_path does not exist.
+        """
+
         # Load configuration
         
 
@@ -259,6 +338,18 @@ class WorkerThread(qtc.QObject):
 
         # Helper function to get field value and sanitize it for use in a filename
         def get_field_value(field_name, default="Unknown"):
+            """            Get the value of a field and sanitize it for use in a filename.
+
+            This function retrieves the value of a specified field from a DataFrame and sanitizes it for use in a filename by removing illegal characters and stripping whitespace.
+
+            Args:
+                field_name (str): The name of the field to retrieve.
+                default (str?): The default value to return if the field is not found. Defaults to "Unknown".
+
+            Returns:
+                str: The sanitized value of the specified field, or the default value if the field is not found.
+            """
+
             value = df.loc[df['Field'] == field_name, 'Value']
             if not value.empty:
                 # Remove illegal characters and strip whitespace
@@ -292,6 +383,21 @@ class WorkerThread(qtc.QObject):
 
 
     def analyze_and_rename_invoices_in_directory(self,directory_path):
+        """        Analyze and rename all invoices in the specified directory.
+
+        This function processes each PDF file in the specified directory, analyzes and renames the invoices, and
+        returns a DataFrame containing all invoice data.
+
+        Args:
+            directory_path (str): The path to the directory containing the PDF files.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing all invoice data.
+
+        Raises:
+            Exception: If an error occurs during the processing of any file.
+        """
+
         # Get a list of all PDF files in the directory
         pdf_files = glob.glob(os.path.join(directory_path, '*.pdf'))
         
@@ -319,6 +425,19 @@ class WorkerThread(qtc.QObject):
 
 	# Function to split PDF into individual pages
     def split_pdf(self,input_pdf_path, output_folder):
+        """        Split a PDF into individual pages.
+
+        This function takes an input PDF file and splits it into individual pages, saving each page as a separate PDF file in the specified output folder.
+
+        Args:
+            input_pdf_path (str): The file path of the input PDF.
+            output_folder (str): The folder where the individual pages will be saved.
+
+
+        Raises:
+            FileNotFoundError: If the input PDF file does not exist.
+        """
+
         # Ensure the output directory exists
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
